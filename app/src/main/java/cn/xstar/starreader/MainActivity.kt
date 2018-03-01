@@ -1,14 +1,16 @@
 package cn.xstar.starreader
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import android.widget.ArrayAdapter
 import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -25,13 +27,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         AppUtil.setStatusBarColor(this, Color.WHITE, true)
-        more.setOnClickListener { openFileChosser() }
         if (Build.VERSION.SDK_INT > 23)
             requestPermissions(ps, REQ_PERMISSION)
 
         read_logs.layoutManager = LinearLayoutManager(this)
-        read_logs.addItemDecoration(SimpleItemDecoration())
+        val decoration = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
+//        decoration.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider_line))
+        read_logs.addItemDecoration(decoration)
         adapter.layout = R.layout.logs_item_layout
+        adapter.footerLayout = R.layout.logs_footer_layout
+        adapter.haveFooter = true
         adapter.datas = PrefsUtil.getObj(MainInfo::class.java).books
         adapter.onItemClickListener = object : RecycleBaseAdapter.OnItemClickListener<BaseHolder, BookInfo> {
             override fun onItemClick(holder: BaseHolder, position: Int, data: BookInfo) {
@@ -39,13 +44,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onItemLongClick(holder: BaseHolder, position: Int, data: BookInfo): Boolean {
-                AppUtil.sShow(applicationContext, data.path)
+                showLongClickDialog(data)
                 return true
             }
 
         }
         read_logs.adapter = adapter
-
     }
 
     fun openFileChosser() {
@@ -63,7 +67,6 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             val filepath = AppUtil.uri2RealPath(this, data.data)
-            var fp: List<String>?
             var choiceFile = File(filepath)
             if (choiceFile.exists()) {
                 turnToReadPage(filepath)
@@ -99,5 +102,41 @@ class MainActivity : AppCompatActivity() {
             holder.find<TextView>(R.id.open_date).text = data.lastOpenDate.format("yyyy/M/d-H-m")
             holder.find<TextView>(R.id.book_path).text = data.path
         }
+
+        override fun onBindFooter(holder: BaseHolder, position: Int) {
+            holder.itemView.setOnClickListener { openFileChosser() }
+        }
+    }
+
+    fun showLongClickDialog(book: BookInfo) {
+        val array = Array(1, {
+            when (it) {
+                0 -> "删除"
+//                1 -> "详情"
+                else -> "未知"
+            }
+        })
+        val alert = AlertDialog.Builder(this).setAdapter(ArrayAdapter<String>(applicationContext,
+                android.R.layout.simple_list_item_activated_1, array)) { dialog, which ->
+            when (which) {
+                0 -> {
+                    val mainInfo = PrefsUtil.getObj(MainInfo::class.java)
+                    val index = mainInfo.containBook(book)
+                    if (index == -1) {
+                        AppUtil.sShow(applicationContext, "文档不存在！")
+                        dialog.dismiss()
+                    } else {
+                        if (mainInfo.books is ArrayList) {
+                            mainInfo.books.remove(book)
+                            PrefsUtil.saveObj(mainInfo)
+                            adapter.datas = PrefsUtil.getObj(MainInfo::class.java).books
+                            adapter.notifyItemRemoved(index)
+                        }
+                        dialog.dismiss()
+                    }
+                }
+            }
+        }.create()
+        alert.show()
     }
 }

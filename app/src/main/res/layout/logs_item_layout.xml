@@ -34,7 +34,6 @@
         android:textSize="12sp"
         app:layout_constraintBaseline_creator="@id/book_path"
         app:layout_constraintBaseline_toBaselineOf="@id/book_path"
-        app:layout_constraintLeft_toRightOf="@id/book_path"
         app:layout_constraintRight_toRightOf="parent"
         tools:text="2017年8月12日17时23分"
         />

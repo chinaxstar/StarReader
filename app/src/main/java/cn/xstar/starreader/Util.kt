@@ -100,7 +100,9 @@ object AppUtil {
             ContentResolver.SCHEME_CONTENT -> {
                 val cursor = context.contentResolver.query(uri, Array(1, { MediaStore.Images.ImageColumns.DATA }), null, null, null)
                 cursor.moveToFirst()
-                data = cursor?.getString(cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA))
+                val index = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
+                if (index != -1)
+                    data = cursor?.getString(index)
                 cursor?.close()
             }
         }
@@ -177,8 +179,4 @@ object PrefsUtil {
     }
 }
 
-class BaseHolder(item: View) : RecyclerView.ViewHolder(item)
-
-class SimpleItemDecoration : RecyclerView.ItemDecoration() {
-
-}
+open class BaseHolder(item: View) : RecyclerView.ViewHolder(item)

@@ -1,8 +1,5 @@
 package cn.xstar.starreader
 
-import android.app.backup.SharedPreferencesBackupHelper
-import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -57,12 +54,12 @@ class ReadTextActivity : AppCompatActivity() {
     }
 
     private fun initData(set: Settings, file: File) {
-        val fr = InputStreamReader(FileInputStream(file), set.charset)
+        val fr = InputStreamReader(FileInputStream(file))
         val lines = fr.readLines()
         fr.close()
         var temp = ""
         for (i in lines.indices) {
-            temp = lines[i].trim()
+            temp = lines[i].trimEnd()
             if (temp.isEmpty()) continue
             pageDatas.addAll(lines(set, temp))
         }
@@ -78,7 +75,8 @@ class ReadTextActivity : AppCompatActivity() {
 
     fun lines(set: Settings, line: String): List<String> {
         val lines = ArrayList<String>()
-        var ls = line
+        val _line = String((line as java.lang.String).bytes, Charsets.UTF_8)
+        var ls = _line
         while (ls.isNotEmpty()) {
             if (ls.length < set.lineChars) {
                 lines.add(ls)
